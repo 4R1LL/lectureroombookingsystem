@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SISTEM PENGURUSAN BILIK KULIAH DIGITAL</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CSS VARIABLES --- */
+        :root {
+            --primary-color: #0f172a; 
+            --secondary-color: #3b82f6; 
+            --accent-color: #8b5cf6; 
+            --bg-color: #f8fafc; 
+            --card-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --input-bg: #f1f5f9;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+        }
+
+        /* Dark Mode */
+        [data-theme="dark"] {
+            --primary-color: #60a5fa; 
+            --secondary-color: #3b82f6;
+            --accent-color: #a78bfa;
+            --bg-color: #0f172a; 
+            --card-bg: #1e293b; 
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+            --input-bg: #374151;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: radial-gradient(var(--border-color) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        /* --- LOGO STYLES --- */
+        .kv-logo {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        .logo-login { width: 120px; margin: 0 auto 1.5rem; }
+        .logo-nav { width: 45px; height: auto; border-radius: 4px; }
+        .logo-qr { width: 80px; margin: 0 auto 1rem; }
+
+        /* --- STATS DASHBOARD --- */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card {
+            background: var(--card-bg); padding: 1.5rem; border-radius: 16px;
+            border: 1px solid var(--border-color); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            display: flex; align-items: center; gap: 1rem; position: relative; overflow: hidden;
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-icon { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; color: white; flex-shrink: 0; }
+        .stat-info h3 { font-size: 1.8rem; font-weight: 800; color: var(--text-primary); margin: 0; line-height: 1; }
+        .stat-info p { font-size: 0.85rem; color: var(--text-secondary); margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* --- QR CODE MODAL --- */
+        #qr-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 4000;
+            display: none; justify-content: center; align-items: center;
+            backdrop-filter: blur(8px); opacity: 0; transition: opacity 0.3s ease;
+        }
+        #qr-overlay.active { opacity: 1; }
+        .qr-card {
+            background: white; padding: 2.5rem; border-radius: 24px; text-align: center;
+            max-width: 360px; width: 100%; transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        #qr-overlay.active .qr-card { transform: scale(1); }
+        .qr-image { width: 220px; height: 220px; margin: 1.5rem auto; display: block; }
+
+        /* --- LOGIN & REGISTER SCREEN --- */
+        #auth-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-color); z-index: 5000;
+            display: flex; justify-content: center; align-items: center;
+            padding: 1rem; backdrop-filter: blur(10px);
+            transition: opacity 0.5s ease, visibility 0.5s;
+        }
+        .auth-box {
+            background: var(--card-bg); padding: 2.5rem; border-radius: 20px; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); width: 100%; max-width: 400px; 
+            text-align: center; border: 1px solid var(--border-color);
+            transform: translateY(0); transition: transform 0.5s ease;
+            position: relative; overflow: hidden;
+        }
+        #auth-overlay.hidden-state { opacity: 0; visibility: hidden; pointer-events: none; }
+        #auth-overlay.hidden-state .auth-box { transform: translateY(30px); }
+        
+        .switch-link {
+            margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-secondary);
+        }
+        .switch-link a {
+            color: var(--secondary-color); font-weight: 700; text-decoration: none; cursor: pointer;
+        }
+        .switch-link a:hover { text-decoration: underline; }
+
+        /* Navbar */
+        .navbar {
+            background-color: var(--card-bg); border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+        }
+        .nav-brand { display: flex; align-items: center; gap: 1rem; }
+        
+        .brand-text h1 { font-size: 1.25rem; font-weight: 800; color: var(--text-primary); line-height: 1.1; letter-spacing: -0.5px; }
+        .brand-text p { font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; letter-spacing: 0.5px; }
+        .nav-actions { display: flex; gap: 0.75rem; align-items: center; }
+        
+        .btn-icon {
+            padding: 0.6rem; border: 1px solid var(--border-color); background: var(--card-bg);
+            color: var(--text-primary); border-radius: 10px; cursor: pointer;
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+        }
+        .btn-icon:hover { background-color: var(--input-bg); border-color: var(--secondary-color); color: var(--secondary-color); }
+        
+        .lang-group { display: flex; background: var(--input-bg); padding: 4px; border-radius: 10px; }
+        .lang-btn { padding: 0.4rem 0.8rem; font-weight: 600; font-size: 0.8rem; color: var(--text-secondary); border: none; background: transparent; cursor: pointer; border-radius: 6px; transition: all 0.2s; }
+        .lang-btn.active { background-color: white; color: var(--secondary-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        [data-theme="dark"] .lang-btn.active { background-color: var(--card-bg); }
+
+        .btn-logout { background: rgba(239, 68, 68, 0.1); color: var(--danger-color); border: none; padding: 0.6rem 1.2rem; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.85rem; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+        .btn-logout:hover { background: var(--danger-color); color: white; }
+
+        /* Main App */
+        #main-app { 
+            opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; 
+            width: 100%; flex-direction: column; flex: 1; display: none;
+        }
+        #main-app.visible { opacity: 1; transform: translateY(0); }
+
+        .container { max-width: 1280px; margin: 2rem auto; padding: 0 1.5rem; width: 100%; flex: 1; }
+        .dashboard-grid { display: grid; grid-template-columns: 400px 1fr; gap: 2rem; align-items: start; }
+        @media (max-width: 1024px) { .dashboard-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 640px) {
+            .navbar { padding: 1rem; }
+            .brand-text h1 { font-size: 1rem; } .brand-text p { font-size: 0.7rem; }
+            .btn-logout span { display: none; }
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+
+        .card { background: var(--card-bg); border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); padding: 2rem; border: 1px solid var(--border-color); }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
+        .card-title { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 0.75rem; }
+
+        .form-group { margin-bottom: 1rem; text-align: left; }
+        .form-label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-control { width: 100%; padding: 0.75rem 1rem; font-size: 0.95rem; color: var(--text-primary); background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 10px; transition: all 0.2s; font-weight: 500; }
+        .form-control:focus { outline: none; border-color: var(--secondary-color); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); background-color: var(--card-bg); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+        .btn-primary { display: inline-flex; align-items: center; justify-content: center; padding: 0.8rem 1.5rem; font-size: 0.95rem; font-weight: 700; border-radius: 10px; border: none; cursor: pointer; width: 100%; background: linear-gradient(135deg, var(--secondary-color), var(--accent-color)); color: white; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25); transition: all 0.2s; }
+        .btn-primary:active { transform: scale(0.98); } .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 8px 12px rgba(59, 130, 246, 0.3); }
+        .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; filter: grayscale(100%); }
+        
+        .btn-action { background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+        .btn-action:hover { background: var(--border-color); }
+        .btn-action.danger { color: var(--danger-color); border-color: rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05); }
+        .btn-action.danger:hover { background: rgba(239, 68, 68, 0.15); }
+
+        /* Table */
+        .table-container { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border-color); }
+        .table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        .table th { background-color: var(--input-bg); color: var(--text-secondary); font-weight: 700; font-size: 0.75rem; padding: 1rem 1.5rem; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-color); }
+        .table td { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); color: var(--text-primary); vertical-align: middle; }
+        .table tr:last-child td { border-bottom: none; }
+        .table tr { transition: background-color 0.1s; }
+        .table tr:hover { background-color: var(--input-bg); }
+        
+        .badge { padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+        .badge-approved { background: rgba(16, 185, 129, 0.1); color: var(--success-color); border: 1px solid var(--success-color); }
+        .btn-qr-small { background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+        .btn-qr-small:hover { background: var(--secondary-color); color: white; border-color: var(--secondary-color); }
+
+        .toast { position: fixed; top: 24px; right: 24px; background: var(--card-bg); padding: 1.2rem 1.5rem; border-radius: 12px; box-shadow: 0 15px 30px -5px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 1rem; transform: translateX(150%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 6000; border-left: 5px solid var(--success-color); color: var(--text-primary); min-width: 300px; }
+        .toast.show { transform: translateX(0); }
+        .toast.error { border-left-color: var(--danger-color); }
+        .toast.error i { color: var(--danger-color); }
+        .empty-state { text-align: center; padding: 4rem 1rem; color: var(--text-secondary); }
+        .footer { text-align: center; padding: 2rem; color: var(--text-secondary); font-size: 0.85rem; border-top: 1px solid var(--border-color); margin-top: auto; background: var(--card-bg); font-weight: 500; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. LOGIN & REGISTER SCREEN -->
+    <div id="auth-overlay">
+        <div class="auth-box">
+            <!-- LOGO KVLD (LOGIN) -->
+            <img src="logo-kvld.jpg" alt="Logo KVLD" class="kv-logo logo-login" onerror="this.style.display='none'">
+            
+            <!-- LOGIN SECTION -->
+            <div id="login-section">
+                <h2 style="margin-bottom: 0.2rem; color: var(--text-primary); font-size: 1.5rem; font-weight:800;">DAFTAR MASUK</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.9rem;">Sistem Pengurusan Bilik Kuliah</p>
+                
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group"><input type="email" id="login-email" class="form-control" required placeholder="Emel Pengguna"></div>
+                    <div class="form-group"><input type="password" id="login-password" class="form-control" required placeholder="Kata Laluan"></div>
+                    <button type="submit" class="btn-primary">LOG MASUK</button>
+                </form>
+                
+                <div class="switch-link">
+                    Belum ada akaun? <a onclick="toggleAuth('register')">Daftar Sekarang</a>
+                </div>
+            </div>
+
+            <!-- REGISTER SECTION (HIDDEN) -->
+            <div id="register-section" style="display: none;">
+                <h2 style="margin-bottom: 0.2rem; color: var(--text-primary); font-size: 1.5rem; font-weight:800;">PENDAFTARAN</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.9rem;">Cipta akaun baru anda</p>
+                
+                <form onsubmit="handleRegister(event)">
+                    <div class="form-group"><input type="text" id="reg-name" class="form-control" required placeholder="Nama Penuh"></div>
+                    <div class="form-group"><input type="email" id="reg-email" class="form-control" required placeholder="Emel Rasmi"></div>
+                    <div class="form-group"><input type="password" id="reg-password" class="form-control" required placeholder="Kata Laluan"></div>
+                    <button type="submit" class="btn-primary">DAFTAR AKAUN</button>
+                </form>
+                
+                <div class="switch-link">
+                    Sudah ada akaun? <a onclick="toggleAuth('login')">Log Masuk</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 2. QR CODE MODAL -->
+    <div id="qr-overlay" onclick="closeQR()">
+        <div class="qr-card" onclick="event.stopPropagation()">
+            <div style="margin-bottom: 1.5rem;">
+                <!-- LOGO KVLD (QR) -->
+                <img src="logo-kvld.jpg" alt="Logo KVLD" class="kv-logo logo-qr" onerror="this.style.display='none'">
+                <h3 style="color: var(--text-primary); margin-bottom: 0.2rem; font-weight: 800;">PINPENGAMBILAN KUNCI BILIK KULIAH</h3>
+                <p style="color: var(--text-secondary); font-size: 0.85rem;">SILA MASUKKAN PIN DI LOKER KUNCI</p>
+            </div>
+            <div style="background: #f8fafc; padding: 1rem; border-radius: 16px; border: 2px dashed var(--border-color); display: inline-block;">
+                <img id="qr-image" class="qr-image" src="" alt="QR Code" />
+            </div>
+            <div style="margin-top: 1.5rem;">
+                <p style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">Kod PIN Akses</p>
+                <div style="font-family: monospace; font-size: 2rem; font-weight: 800; color: var(--primary-color); letter-spacing: 4px;" id="qr-pin">----</div>
+            </div>
+            <button class="btn-primary" style="margin-top: 1.5rem;" onclick="closeQR()">TUTUP</button>
+        </div>
+    </div>
+
+    <!-- 3. MAIN APP CONTENT -->
+    <div id="main-app">
+        
+        <nav class="navbar">
+            <div class="nav-brand">
+                <!-- LOGO KVLD (NAVBAR) -->
+                <img src="logo-kvld.jpg" alt="KVLD" class="kv-logo logo-nav" onerror="this.style.display='none'">
+                <div class="brand-text">
+                    <h1 id="txt-title">LECTURE ROOM BOOKING</h1>
+                    <p id="txt-subtitle">KOLEJ VOKASIONAL LAHAD DATU</p>
+                </div>
+            </div>
+            <div class="nav-actions">
+                <div class="lang-group">
+                    <button class="lang-btn active" onclick="setLanguage('bm')">BM</button>
+                    <button class="lang-btn" onclick="setLanguage('en')">EN</button>
+                </div>
+                <button class="btn-icon" onclick="cycleTheme()"><i class="fas fa-adjust" id="theme-icon"></i></button>
+                <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i><span>Keluar</span></button>
+            </div>
+        </nav>
+
+        <div id="toast" class="toast">
+            <i class="fas fa-check-circle"></i>
+            <div><h4 id="toast-title" style="font-weight: 700; margin-bottom: 2px;">Berjaya!</h4><span id="alert-msg" style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 500;"></span></div>
+        </div>
+
+        <div class="container">
+            <!-- STATS DASHBOARD -->
+            <div class="stats-grid">
+                <div class="stat-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white;">
+                    <div class="stat-icon" style="background: rgba(255,255,255,0.2);"><i class="fas fa-door-open"></i></div>
+                    <div class="stat-info"><h3 id="stat-available">--</h3><p id="lbl-avail">Bilik Kosong</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #ecfdf5; color: #10b981;"><i class="fas fa-calendar-check"></i></div>
+                    <div class="stat-info"><h3 id="stat-booked">0</h3><p id="lbl-today">Tempahan Hari Ini</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #fef3c7; color: #d97706;"><i class="fas fa-user-shield"></i></div>
+                    <div class="stat-info"><h3 style="font-size: 1.2rem;" id="user-display">Guest</h3><p>Pengguna Aktif</p></div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <!-- FORM -->
+                <section class="card">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fas fa-plus-circle" style="color: var(--secondary-color);"></i> <span id="txt-form-title">Tempahan Baru</span></div>
+                    </div>
+                    <form id="bookingForm" onsubmit="handleBooking(event)">
+                        <div class="form-group">
+                            <label class="form-label" id="lbl-lecturer">Nama Pensyarah</label>
+                            <input type="text" id="lecturer" required class="form-control" placeholder="Nama anda..." readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" id="lbl-date">Tarikh</label>
+                            <input type="date" id="date" required class="form-control" onchange="updateRoomOptions()">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label class="form-label" id="lbl-start">Masa Mula</label><input type="time" id="startTime" required class="form-control" onchange="updateRoomOptions()"></div>
+                            <div class="form-group"><label class="form-label" id="lbl-end">Masa Tamat</label><input type="time" id="endTime" required class="form-control" onchange="updateRoomOptions()"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" id="lbl-room">Pilih Bilik</label>
+                            <select id="room" required class="form-control"><option value="">-- Sila Pilih Tarikh & Masa Dahulu --</option></select>
+                            <small style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 8px; display: block; font-weight: 500;">
+                                <i class="fas fa-info-circle"></i> Bilik yang bertindih masa akan disembunyikan secara automatik.
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" id="lbl-purpose">Tujuan</label>
+                            <textarea id="purpose" required class="form-control" rows="3" placeholder="Contoh: Kelas Ganti, Taklimat..."></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary" id="btn-submit"><i class="fas fa-paper-plane" style="margin-right: 8px;"></i> HANTAR TEMPAHAN</button>
+                    </form>
+                </section>
+
+                <!-- HISTORY -->
+                <section class="card">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fas fa-history" style="color: var(--secondary-color);"></i> <span id="txt-history-title">Rekod Tempahan</span></div>
+                        <button class="btn-action" onclick="exportCSV()"><i class="fas fa-file-export"></i> Eksport</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th id="th-room">Maklumat Bilik</th>
+                                    <th id="th-date">Tarikh & Masa</th>
+                                    <th>Akses</th>
+                                    <th id="th-status" style="text-align: center;">Status</th>
+                                    <th style="text-align: center;">Tindakan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <!-- Data -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+        <footer class="footer">
+            &copy; 2025 Classroom Booking System - Kolej Vokasional Lahad Datu <br>
+            <span style="font-size: 0.75rem; opacity: 0.7;">Versi Inovasi 2.0 (Build 100)</span>
+        </footer>
+    </div>
+
+    <script>
+        // --- DATA & STATE ---
+        const allRooms = [
+            "Bilik Kuliah 1 SVM KSK", "Bilik Kuliah 1 SVM BAK", "Bilik Kuliah 1 SVM GMA", "Bilik Kuliah 1 SVM GAT", "Bilik Kuliah 1 SVM GTP",
+            "Bilik Kuliah 1 SVM CAB", "Bilik Kuliah 1 SVM GAK", "Bilik Kuliah 1 SVM CPE", "Bilik Kuliah 1 SVM CPD","Bilik Kuliah 2 SVM KSK",
+            "Bilik Kuliah 2 SVM BAK", "Bilik Kuliah 2 SVM GMA", "Bilik Kuliah 2 SVM GAT", "Bilik Kuliah 2 SVM GTP", "Bilik Kuliah 2 SVM CAB",
+            "Bilik Kuliah 2 SVM GAK", "Bilik Kuliah 2 SVM CPB", "Bilik Kuliah 2 SVM CPE", "Bilik Kuliah 2 SVM CPD","BK DVM DAA", "BK DVM DAC",
+            "BK DVM DAB", "BK DVM DPE", "BK DVM DAF", "BK DVM DBP", "BK DVM DME", "BK DVM DAF","BK UMUM 1" , "BK UMUM 2" , "BK UMUM 3", "BK UMUM 4", "Makmal Sains 1", "Makmal Sains 2"
+        ];
+        
+        let bookings = JSON.parse(localStorage.getItem('bookings')) || [];
+        let registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || []; // Local User Database
+        let currentUser = localStorage.getItem('currentUser') || null;
+        let currentLang = localStorage.getItem('lang') || 'bm';
+        const themes = ['light', 'dark', 'device'];
+        let currentThemeIndex = 0; 
+
+        // --- TRANSLATIONS ---
+        const translations = {
+            bm: {
+                title: "SISTEM TEMPAHAN BILIK KULIAH", subtitle: "KOLEJ VOKASIONAL LAHAD DATU", form_title: "Tempahan Baru", history_title: "Rekod Tempahan",
+                lbl_lecturer: "Nama Pensyarah", lbl_room: "Pilih Bilik", lbl_date: "Tarikh", lbl_start: "Masa Mula", lbl_end: "Masa Tamat", lbl_purpose: "Tujuan",
+                btn_submit: "HANTAR TEMPAHAN", th_room: "Maklumat Bilik", th_date: "Tarikh & Masa", th_status: "Status",
+                status_approved: "Sah", empty_state: "Tiada rekod tempahan ditemui.",
+                placeholder_name: "Nama anda...", placeholder_purpose: "Tujuan tempahan...", select_default: "-- Sila Pilih --",
+                select_prompt: "-- Sila Pilih Tarikh & Masa Dahulu --",
+                lbl_avail: "Bilik Kosong", lbl_today: "Tempahan Hari Ini"
+            },
+            en: {
+                title: "LECTURE ROOM BOOKING", subtitle: "LAHAD DATU VOCATIONAL COLLEGE", form_title: "New Booking", history_title: "Booking Records",
+                lbl_lecturer: "Lecturer Name", lbl_room: "Select Room", lbl_date: "Date", lbl_start: "Start Time", lbl_end: "End Time", lbl_purpose: "Purpose",
+                btn_submit: "SUBMIT BOOKING", th_room: "Room Info", th_date: "Date & Time", th_status: "Status",
+                status_approved: "Approved", empty_state: "No booking records found.",
+                placeholder_name: "Your name...", placeholder_purpose: "Purpose of booking...", select_default: "-- Please Select --",
+                select_prompt: "-- Please Select Date & Time First --",
+                lbl_avail: "Rooms Available", lbl_today: "Booked Today"
+            }
+        };
+
+        // --- CORE INIT ---
+        window.onload = function() {
+            document.getElementById('date').min = new Date().toISOString().split("T")[0];
+            initTheme();
+            setLanguage(currentLang);
+            
+            if(currentUser) {
+                showMainApp(currentUser);
+            } else {
+                document.getElementById('auth-overlay').classList.remove('hidden-state');
+            }
+        };
+
+        // --- THEME ENGINE ---
+        function initTheme() { applyTheme(themes[0]); }
+        function cycleTheme() { currentThemeIndex = (currentThemeIndex + 1) % themes.length; applyTheme(themes[currentThemeIndex]); }
+        function applyTheme(mode) {
+            const body = document.body; const icon = document.getElementById('theme-icon'); body.removeAttribute('data-theme');
+            if (mode === 'dark') { body.setAttribute('data-theme', 'dark'); icon.className = 'fas fa-moon'; }
+            else if (mode === 'light') { icon.className = 'fas fa-sun'; }
+            else { icon.className = 'fas fa-desktop'; if (window.matchMedia('(prefers-color-scheme: dark)').matches) body.setAttribute('data-theme', 'dark'); }
+        }
+
+        // --- AUTH SYSTEM (LOGIN & REGISTER) ---
+        function toggleAuth(view) {
+            const loginSec = document.getElementById('login-section');
+            const regSec = document.getElementById('register-section');
+            
+            if(view === 'register') {
+                loginSec.style.display = 'none';
+                regSec.style.display = 'block';
+            } else {
+                loginSec.style.display = 'block';
+                regSec.style.display = 'none';
+            }
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+
+            if (registeredUsers.some(u => u.email === email)) {
+                showToast("Emel ini sudah didaftarkan!", "error");
+                return;
+            }
+
+            const newUser = { name, email, password };
+            registeredUsers.push(newUser);
+            localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+
+            showToast("Pendaftaran Berjaya! Sila Log Masuk.");
+            toggleAuth('login'); 
+            document.getElementById('login-email').value = email;
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            let btn = e.target.querySelector('button');
+            const ori = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Memproses...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                if (email === 'admin@kvld.edu.my' && password === '1234') {
+                    successLogin("Administrator");
+                    return;
+                }
+
+                const foundUser = registeredUsers.find(u => u.email === email && u.password === password);
+                
+                if (foundUser) {
+                    successLogin(foundUser.name);
+                } else {
+                    showToast("Emel atau kata laluan salah!", "error");
+                    btn.innerHTML = ori;
+                    btn.disabled = false;
+                }
+            }, 1500);
+        }
+
+        function successLogin(name) {
+            localStorage.setItem('currentUser', name);
+            showMainApp(name);
+        }
+
+        function showMainApp(user) {
+            currentUser = user;
+            document.getElementById('user-display').innerText = user;
+            
+            if (user !== "Administrator") {
+                document.getElementById('lecturer').value = user;
+            }
+
+            const authOverlay = document.getElementById('auth-overlay');
+            const mainApp = document.getElementById('main-app');
+            
+            authOverlay.classList.add('hidden-state');
+            mainApp.style.display = 'flex';
+            requestAnimationFrame(() => mainApp.classList.add('visible'));
+            
+            renderTable(); updateStats(); updateRoomOptions();
+        }
+        
+        function logout() {
+            localStorage.removeItem('currentUser');
+            location.reload(); 
+        }
+
+        // --- BOOKING LOGIC ---
+        function handleBooking(e) {
+            e.preventDefault();
+            const roomVal = document.getElementById('room').value;
+            const dateVal = document.getElementById('date').value;
+            const startVal = document.getElementById('startTime').value;
+            const endVal = document.getElementById('endTime').value;
+
+            if (!roomVal) { showToast("Sila pilih bilik yang sah!", "error"); return; }
+            if (startVal >= endVal) { showToast("Masa tamat mesti selepas masa mula!", "error"); return; }
+
+            const pin = Math.floor(1000 + Math.random() * 9000).toString();
+            const newBooking = {
+                id: Date.now(),
+                room: roomVal,
+                date: dateVal,
+                start: startVal,
+                end: endVal,
+                lecturer: document.getElementById('lecturer').value,
+                purpose: document.getElementById('purpose').value,
+                pin: pin,
+                timestamp: new Date().getTime()
+            };
+
+            bookings.unshift(newBooking);
+            saveData(); 
+
+            showQR(pin);
+            document.getElementById('bookingForm').reset();
+            if (currentUser && currentUser !== "Administrator") {
+                document.getElementById('lecturer').value = currentUser;
+            }
+            
+            updateRoomOptions(); renderTable(); updateStats();
+            showToast(`${translations[currentLang].alert_success || "Tempahan Berjaya!"}`);
+        }
+
+        function deleteBooking(id) {
+            const booking = bookings.find(b => b.id === id);
+            if (!booking) {
+                showToast("Tempahan tidak ditemui.", "error");
+                return;
+            }
+            if (currentUser !== "Administrator" && booking.lecturer !== currentUser) {
+                showToast("Anda hanya boleh memadam tempahan anda sendiri.", "error");
+                return;
+            }
+            if(confirm("Adakah anda pasti ingin memadam tempahan ini?")) {
+                bookings = bookings.filter(b => b.id !== id);
+                saveData();
+                renderTable(); updateStats(); updateRoomOptions();
+                showToast("Tempahan telah dipadam.", "error");
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('bookings', JSON.stringify(bookings));
+        }
+
+        // --- DASHBOARD & UI ---
+        function updateStats() {
+            const todayStr = new Date().toISOString().split("T")[0];
+            const bookedToday = bookings.filter(b => b.date === todayStr).length;
+            
+            const now = new Date();
+            const currentHour = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+            
+            const busyRoomsNow = bookings.filter(b => 
+                b.date === todayStr && b.start <= currentHour && b.end > currentHour
+            ).map(b => b.room);
+            
+            const uniqueBusyRooms = [...new Set(busyRoomsNow)].length;
+            const availableNow = allRooms.length - uniqueBusyRooms;
+
+            animateValue("stat-available", parseInt(document.getElementById("stat-available").innerText) || 0, availableNow, 500);
+            animateValue("stat-booked", parseInt(document.getElementById("stat-booked").innerText) || 0, bookedToday, 500);
+        }
+
+        function animateValue(id, start, end, duration) {
+            if (start === end) return;
+            const range = end - start;
+            let current = start;
+            const increment = end > start ? 1 : -1;
+            const stepTime = Math.abs(Math.floor(duration / range));
+            const obj = document.getElementById(id);
+            const timer = setInterval(function() {
+                current += increment;
+                obj.innerHTML = current;
+                if (current == end) { clearInterval(timer); }
+            }, stepTime > 0 ? stepTime : 10);
+        }
+
+        function showQR(pin) {
+            const overlay = document.getElementById('qr-overlay');
+            const img = document.getElementById('qr-image');
+            const pinDisplay = document.getElementById('qr-pin');
+            
+            img.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=0f172a&bgcolor=ffffff&data=KVLD_SECURE_ACCESS:${pin}`;
+            pinDisplay.innerText = pin;
+            overlay.style.display = 'flex';
+            setTimeout(() => overlay.classList.add('active'), 10);
+        }
+        function closeQR() { 
+            const overlay = document.getElementById('qr-overlay');
+            overlay.classList.remove('active');
+            setTimeout(() => overlay.style.display = 'none', 300);
+        }
+
+        function exportCSV() {
+            if(bookings.length === 0) { showToast("Tiada data untuk dieksport.", "error"); return; }
+            let csvContent = "data:text/csv;charset=utf-8,ID,Bilik,Tarikh,Masa Mula,Masa Tamat,Pensyarah,Tujuan,PIN\n";
+            bookings.forEach(b => {
+                csvContent += `${b.id},"${b.room}",${b.date},${b.start},${b.end},"${b.lecturer}","${b.purpose}",${b.pin}\n`;
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Laporan_Tempahan_KVLD_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function updateRoomOptions() {
+            const dateVal = document.getElementById('date').value;
+            const startVal = document.getElementById('startTime').value;
+            const endVal = document.getElementById('endTime').value;
+            const roomSelect = document.getElementById('room');
+            const currentSelection = roomSelect.value;
+            roomSelect.innerHTML = ''; 
+
+            if (!dateVal || !startVal || !endVal) {
+                let option = document.createElement('option');
+                option.value = ""; option.text = translations[currentLang].select_prompt;
+                roomSelect.add(option); roomSelect.disabled = true; return;
+            }
+            
+            if (startVal >= endVal) {
+               let option = document.createElement('option');
+               option.text = "Masa tidak sah (Mula > Tamat)";
+               roomSelect.add(option); roomSelect.disabled = true; return;
+            }
+
+            roomSelect.disabled = false;
+            let defaultOption = document.createElement('option');
+            defaultOption.value = ""; defaultOption.text = translations[currentLang].select_default;
+            roomSelect.add(defaultOption);
+
+            const availableRooms = allRooms.filter(roomName => {
+                const isBooked = bookings.some(booking => {
+                    if (booking.room !== roomName || booking.date !== dateVal) return false;
+                    return (startVal < booking.end && endVal > booking.start);
+                });
+                return !isBooked; 
+            });
+
+            availableRooms.forEach(room => {
+                let option = document.createElement('option');
+                option.value = room; option.text = room; roomSelect.add(option);
+            });
+
+            if (availableRooms.length === 0) {
+                let option = document.createElement('option');
+                option.value = "";
+                option.text = "Tiada bilik tersedia untuk masa ini";
+                roomSelect.add(option);
+                roomSelect.disabled = true;
+            } else {
+                // Kekalkan pilihan sebelumnya jika masih ada
+                if (availableRooms.includes(currentSelection)) {
+                    roomSelect.value = currentSelection;
+                }
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '';
+
+            const userBookings = bookings.filter(b => currentUser === "Administrator" || b.lecturer === currentUser);
+
+            if (userBookings.length === 0) {
+                const tr = document.createElement('tr');
+                const td = document.createElement('td');
+                td.colSpan = 5;
+                td.className = 'empty-state';
+                td.innerHTML = `<p>${translations[currentLang].empty_state}</p>`;
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+                return;
+            }
+
+            userBookings.forEach(booking => {
+                const tr = document.createElement('tr');
+                const td1 = document.createElement('td');
+                td1.innerHTML = `<div style="font-weight:700; color:var(--primary-color);">${booking.room}</div><div style="font-size:0.85rem; color:var(--text-secondary);"><i class="fas fa-user-circle"></i> ${booking.lecturer}</div>`;
+                tr.appendChild(td1);
+                const td2 = document.createElement('td');
+                td2.innerHTML = `<div style="font-weight:600; color:var(--text-primary);">${booking.date}</div><div style="font-size:0.85rem; color:var(--text-secondary);">${booking.start} - ${booking.end}</div>`;
+                tr.appendChild(td2);
+                const td3 = document.createElement('td');
+                td3.innerHTML = `<button class="btn-qr-small" onclick="showQR('${booking.pin}')" title="Lihat QR"><i class="fas fa-qrcode"></i></button>`;
+                tr.appendChild(td3);
+                const td4 = document.createElement('td');
+                td4.style.textAlign = 'center';
+                td4.innerHTML = `<span class="badge badge-approved"><i class="fas fa-check-circle"></i> ${translations[currentLang].status_approved}</span>`;
+                tr.appendChild(td4);
+                const td5 = document.createElement('td');
+                td5.style.textAlign = 'center';
+                td5.innerHTML = `<button class="btn-action danger" onclick="deleteBooking(${booking.id})" title="Padam"><i class="fas fa-trash"></i></button>`;
+                tr.appendChild(td5);
+                tbody.appendChild(tr);
+            });
+        }
+
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            const title = document.getElementById('toast-title');
+            const icon = toast.querySelector('i');
+            document.getElementById('alert-msg').innerText = msg;
+            
+            if(type === 'error') {
+                toast.classList.add('error'); title.innerText = "Ralat!"; icon.className = "fas fa-exclamation-circle";
+            } else {
+                toast.classList.remove('error'); title.innerText = "Berjaya!"; icon.className = "fas fa-check-circle";
+            }
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 4000);
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('lang', lang);
+            const t = translations[lang];
+            
+            document.getElementById('txt-title').innerText = t.title;
+            document.getElementById('txt-subtitle').innerText = t.subtitle;
+            document.getElementById('txt-form-title').innerText = t.form_title;
+            document.getElementById('txt-history-title').innerText = t.history_title;
+            document.getElementById('lbl-lecturer').innerText = t.lbl_lecturer;
+            document.getElementById('lecturer').placeholder = t.placeholder_name;
+            document.getElementById('lbl-room').innerText = t.lbl_room;
+            document.getElementById('lbl-date').innerText = t.lbl_date;
+            document.getElementById('lbl-start').innerText = t.lbl_start;
+            document.getElementById('lbl-end').innerText = t.lbl_end;
+            document.getElementById('lbl-purpose').innerText = t.lbl_purpose;
+            document.getElementById('purpose').placeholder = t.placeholder_purpose;
+            document.getElementById('btn-submit').innerHTML = `<i class="fas fa-paper-plane" style="margin-right:8px;"></i> ${t.btn_submit}`;
+            document.getElementById('th-room').innerText = t.th_room;
+            document.getElementById('th-date').innerText = t.th_date;
+            document.getElementById('th-status').innerText = t.th_status;
+            document.getElementById('lbl-avail').innerText = t.lbl_avail;
+            document.getElementById('lbl-today').innerText = t.lbl_today;
+            
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.innerText.toLowerCase() === lang);
+            });
+            
+            updateRoomOptions(); renderTable();
+        }
+    </script>
+</body>
+</html>
